@@ -8,7 +8,8 @@ import messageRouter from './Routes/message.js'
 import { app,server } from './socket/socket.js';
 dotenv.config();
 app.use(cors({
-    origin: 'https://chat-application-frontend-lac.vercel.app'
+    origin: 'https://chat-application-frontend-lac.vercel.app',
+    credentials:true
 }))
 app.use(express.json())
 app.use(express.static('public/images'))
