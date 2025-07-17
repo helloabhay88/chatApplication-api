@@ -15,8 +15,11 @@ export const upload = multer({ storage: storage })
 
 async function Register(req, res) {
     try {
-        const { email, password,name } = req.body
-        const file = req.file.filename
+        const { email, password, name } = req.body
+        let file;
+        if (req.file) {
+            file = req.file.filename
+        }
         const userExist = await userModel.findOne({ email })
         if (userExist) {
             return res.status(400).json({ message: "User already exists" })
@@ -26,8 +29,11 @@ async function Register(req, res) {
             email,
             password: hashpassword,
             name,
-            image: file
+
         })
+        if (file) {
+            newUser.image = file
+        }
         await newUser.save()
         return res.status(200).json({ message: "success" })
     } catch (error) {
@@ -36,7 +42,7 @@ async function Register(req, res) {
 
 }
 
-async function Login(req,res){
+async function Login(req, res) {
     try {
         const { email, password } = req.body
         const userExist = await userModel.findOne({ email })
@@ -44,20 +50,20 @@ async function Login(req,res){
             return res.status(400).json({ message: "User not exists" })
         }
         const matchPassword = await bcrypt.compare(password, userExist.password)
-        if(!matchPassword){
+        if (!matchPassword) {
             return res.status(400).json({ message: "Invalid password" })
         }
-        const token=jwt.sign({id:userExist._id},process.env.JWT_KEY,{
-            expiresIn:'4h'
+        const token = jwt.sign({ id: userExist._id }, process.env.JWT_KEY, {
+            expiresIn: '4h'
         })
-        return res.status(200).json({message:"success",token,user:{id:userExist._id, email:userExist.email}})
+        return res.status(200).json({ message: "success", token, user: { id: userExist._id, email: userExist.email } })
     } catch (error) {
         return res.status(500).json({ message: "error" + error })
     }
 
 }
-const verify=(req,res)=>{
-    return res.status(200).json({message:'success'})
+const verify = (req, res) => {
+    return res.status(200).json({ message: 'success' })
 }
 
-export { Register,Login,verify }
+export { Register, Login, verify }
