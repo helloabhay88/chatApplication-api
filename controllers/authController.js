@@ -30,6 +30,7 @@ async function Register(req, res) {
         let file;
         if (req.file) {
             file = req.file.filename
+            console.log(file)
         }
         const userExist = await userModel.findOne({ email })
         if (userExist) {
