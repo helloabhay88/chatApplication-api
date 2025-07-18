@@ -3,14 +3,25 @@ import path from "path"
 import userModel from "../models/user.js"
 import bcrypt from "bcrypt"
 import jwt from 'jsonwebtoken'
-const storage = multer.diskStorage({
-    destination: (req, res, cb) => {
-        cb(null, 'public/images')
-    },
-    filename: (req, file, cb) => {
-        cb(null, file.fieldname + "_" + Date.now() + path.extname(file.originalname))
-    }
-})
+import {CloudinaryStorage} from 'multer-storage-cloudinary'
+import cloudinary from "../cloudinary.js"
+// const storage = multer.diskStorage({
+//     destination: (req, res, cb) => {
+//         cb(null, 'public/images')
+//     },
+//     filename: (req, file, cb) => {
+//         cb(null, file.fieldname + "_" + Date.now() + path.extname(file.originalname))
+//     }
+// })
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'chatApplication_uploads',
+    allowed_formats: ['jpg', 'png'],
+    public_id: (req, file) => `${file.fieldname}-${Date.now()}`,
+  },
+});
 export const upload = multer({ storage: storage })
 
 async function Register(req, res) {
