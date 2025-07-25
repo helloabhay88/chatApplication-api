@@ -4,6 +4,7 @@ import express from 'express'
 
 const app = express()
 const onlineUsers = {}
+const lastHeartbeat = {};
 const server = http.createServer(app)
 
 const io = new Server(server, {
@@ -53,6 +54,14 @@ io.on('connection', (socket) => {
         const receiverSocketId = onlineUsers[receiverId];
         if (receiverSocketId) {
             io.to(receiverSocketId).emit('userStopTyping', { senderId });
+        }
+    });
+
+    socket.on('heartbeat', (userId) => {
+        lastHeartbeat[userId] = Date.now();
+        if (!onlineUsers[userId]) {
+            onlineUsers[userId] = socket.id;
+            io.emit('onlineUsers', Object.keys(onlineUsers));
         }
     });
 
