@@ -8,7 +8,7 @@ import messageRouter from './Routes/message.js'
 import { app,server } from './socket/socket.js';
 dotenv.config();
 app.use(cors({
-  origin: ['https://socketmate.vercel.app/','http://localhost:5173'],
+  origin: ['https://socketmate.vercel.app','http://localhost:5173'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization'],
