@@ -1,6 +1,7 @@
 import { Server } from 'socket.io'
 import http from 'http'
 import express from 'express'
+import Message from '../models/Message.js'
 
 const app = express()
 const onlineUsers = {}
@@ -74,6 +75,11 @@ io.on('connection', (socket) => {
         }
         io.emit('onlineUsers', Object.keys(onlineUsers));
     });
+
+    socket.on('messageSeen',async({messageId,senderId})=>{
+        await Message.findByIdAndUpdate(messageId,{seen:true})
+        io.to(senderId).emit('messageSeen',{messageId})
+    })
 });
 
 
