@@ -76,9 +76,16 @@ io.on('connection', (socket) => {
         io.emit('onlineUsers', Object.keys(onlineUsers));
     });
 
-    socket.on('messageSeen',async({messageId,senderId})=>{
-        await Message.findByIdAndUpdate(messageId,{seen:true})
-        io.to(senderId).emit('messageSeen',{messageId})
+    socket.on('messageSeen', async ({ messageId, senderId }) => {
+        await Message.findByIdAndUpdate(messageId, { seen: true })
+        console.log(senderId, " ", messageId)
+        
+            if (onlineUsers[senderId]) {
+                console.log("message seen who is the sender", senderId, onlineUsers[senderId])
+                io.to(onlineUsers[senderId]).emit('messageSeen', { messageId })
+
+            }
+        
     })
 });
 
