@@ -20,11 +20,11 @@ export const GetReceiverSocketId = (receiverId) => {
 }
 
 io.on('connection', (socket) => {
-    console.log("user joined", socket.id);
+    //console.log("user joined", socket.id);
 
     socket.on('join', (receiverId) => {
         onlineUsers[receiverId] = socket.id;
-        console.log("Receiver id ", receiverId, " socket id ", socket.id);
+        //console.log("Receiver id ", receiverId, " socket id ", socket.id);
 
         io.emit('onlineUsers', Object.keys(onlineUsers));
     });
@@ -33,14 +33,14 @@ io.on('connection', (socket) => {
     socket.on('user-online', (userId) => {
         onlineUsers[userId] = socket.id;
         io.emit('onlineUsers', Object.keys(onlineUsers));
-        console.log(`User ${userId} is online`);
+        //console.log(`User ${userId} is online`);
     });
 
     socket.on('user-offline', (userId) => {
         if (onlineUsers[userId] === socket.id) {
             delete onlineUsers[userId];
             io.emit('onlineUsers', Object.keys(onlineUsers));
-            console.log(`User ${userId} is offline`);
+            //console.log(`User ${userId} is offline`);
         }
     });
 
@@ -78,10 +78,10 @@ io.on('connection', (socket) => {
 
     socket.on('messageSeen', async ({ messageId, senderId }) => {
         await Message.findByIdAndUpdate(messageId, { seen: true })
-        console.log(senderId, " ", messageId)
+        //console.log(senderId, " ", messageId)
         
             if (onlineUsers[senderId]) {
-                console.log("message seen who is the sender", senderId, onlineUsers[senderId])
+                //console.log("message seen who is the sender", senderId, onlineUsers[senderId])
                 io.to(onlineUsers[senderId]).emit('messageSeen', { messageId })
 
             }
