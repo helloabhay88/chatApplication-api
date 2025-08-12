@@ -45,11 +45,12 @@ router.post('/send/:receiverId', verifyUser, async (req, res) => {
         content: content,
         createdAt: new Date()
     })
-    await newMessage.save()
+    
      const receiverSocketId=GetReceiverSocketId(receiverId)
         if(receiverSocketId){
             io.to(receiverSocketId).emit('newMessage',newMessage)
         }
+        await newMessage.save()
     return res.json(newMessage)
 })
 
