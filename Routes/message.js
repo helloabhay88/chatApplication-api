@@ -62,6 +62,7 @@ router.post('/send/:receiverId', verifyUser, async (req, res) => {
         
         const receiverSocketId = GetReceiverSocketId(receiverId);
         if (receiverSocketId) {
+            //console.log("Receiver socket ID found: ", receiverSocketId);
             io.to(receiverSocketId).emit('newMessage', newMessage);
         }
         
