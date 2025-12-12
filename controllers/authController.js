@@ -90,6 +90,10 @@ async function forgotPassword(req, res) {
             expiresIn: '5m'
         })
         const link = `https://chatapplication-api.onrender.com/reset-password/${userExist._id}/${token}`;
+        console.log("Link: ",link);
+        console.log("Email ",process.env.EMAIL);
+        console.log("Password ",process.env.PASSWORD);
+        console.log("Email of the receipient: ",email);
         let transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
