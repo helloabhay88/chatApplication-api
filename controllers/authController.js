@@ -79,46 +79,57 @@ async function Login(req, res) {
 async function forgotPassword(req, res) {
     try {
         const { email } = req.body;
-        console.log(email)
-        const userExist = await userModel.findOne({ email })
+
+        console.log("Incoming email:", email);
+
+        const userExist = await userModel.findOne({ email });
         if (!userExist) {
-            console.log("User with this email does not exist, ", email);
-            return res.status(400).json({ message: "User with this email does not exist" })
+            console.log("User not found:", email);
+            return res.status(400).json({ message: "User with this email does not exist" });
         }
+
         const secret = process.env.JWT_KEY + userExist.password;
-        const token = jwt.sign({ id: userExist._id, email: userExist.email }, secret, {
-            expiresIn: '5m'
-        })
+        const token = jwt.sign(
+            { id: userExist._id, email: userExist.email },
+            secret,
+            { expiresIn: "5m" }
+        );
+
         const link = `https://chatapplication-api.onrender.com/reset-password/${userExist._id}/${token}`;
-        console.log("Link: ",link);
-        console.log("Email ",process.env.EMAIL);
-        console.log("Password ",process.env.PASSWORD);
-        console.log("Email of the receipient: ",email);
+        console.log("Reset link:", link);
+
+        // -------------------------
+        // 🔥 BREVO SMTP TRANSPORTER
+        // -------------------------
         let transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: process.env.BREVO_HOST,
+            port: process.env.BREVO_PORT,
+            secure: false, // port 587 → secure:false
             auth: {
-                user: process.env.EMAIL,
-                pass: process.env.PASSWORD
+                user: process.env.BREVO_USER,
+                pass: process.env.BREVO_PASS
             }
         });
 
         let mailOptions = {
-            from: `Socketmate <${process.env.EMAIL}>`,
+            from: `Socketmate <${process.env.EMAIL}>`,   // your Gmail as sender
             to: email,
-            subject: 'Password Reset Request for Socketmate',
+            subject: "Password Reset Request for Socketmate",
             text: `Click the link below to reset your password:\n\n${link}`
         };
 
-        transporter.sendMail(mailOptions, function (error, info) {
-            if (error) {
-                console.log(error);
-            } else {
-                console.log('Email sent: ' + info.response);
-            }
+        await transporter.sendMail(mailOptions);
+
+        console.log("Password reset email sent to:", email);
+
+        return res.status(200).json({
+            message: "Email sent successfully",
+            link: link
         });
-        return res.status(200).json({ message: "verified", link: link });
+
     } catch (error) {
-        console.log(error)
+        console.error("Forgot Password Error:", error);
+        return res.status(500).json({ message: "Server error" });
     }
 }
 
