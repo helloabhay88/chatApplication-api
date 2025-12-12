@@ -18,6 +18,8 @@ app.use(express.static('public/images'))
 app.use('/chat/user',authRouter)
 app.use('/chat/users',userRouter)
 app.use('/chat/message',messageRouter)
+app.use('/forgot-password',authRouter)
+app.use('/reset-password',authRouter)
 
 server.listen(process.env.PORT,()=>{
     connect()
