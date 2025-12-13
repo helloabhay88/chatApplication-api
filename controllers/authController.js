@@ -6,6 +6,8 @@ import jwt from 'jsonwebtoken'
 import { CloudinaryStorage } from 'multer-storage-cloudinary'
 import cloudinary from "../cloudinary.js"
 import nodemailer from 'nodemailer'
+
+const SibApiV3Sdk = require('sib-api-v3-sdk');
 // const storage = multer.diskStorage({
 //     destination: (req, res, cb) => {
 //         cb(null, 'public/images')
@@ -77,67 +79,55 @@ async function Login(req, res) {
 }
 
 async function forgotPassword(req, res) {
-    try {
-        const { email } = req.body;
+  try {
+    const { email } = req.body;
 
-        console.log("Incoming email:", email);
-
-        const userExist = await userModel.findOne({ email });
-        if (!userExist) {
-            console.log("User not found:", email);
-            return res.status(400).json({ message: "User with this email does not exist" });
-        }
-
-        const secret = process.env.JWT_KEY + userExist.password;
-        const token = jwt.sign(
-            { id: userExist._id, email: userExist.email },
-            secret,
-            { expiresIn: "5m" }
-        );
-
-        const link = `https://chatapplication-api.onrender.com/reset-password/${userExist._id}/${token}`;
-        console.log("Reset link:", link);
-
-        // -------------------------
-        // 🔥 BREVO SMTP TRANSPORTER
-        // -------------------------
-        let transporter = nodemailer.createTransport({
-            host: process.env.BREVO_HOST,
-            port: process.env.BREVO_PORT,
-            secure: false, // port 587 → secure:false
-            auth: {
-                user: process.env.BREVO_USER,
-                pass: process.env.BREVO_PASS
-            }
-        });
-
-        let mailOptions = {
-            from: `Socketmate <${process.env.EMAIL}>`,   // your Gmail as sender
-            to: email,
-            subject: "Password Reset Request for Socketmate",
-            text: `Click the link below to reset your password:\n\n${link}`
-        };
-        transporter.verify((err, success) => {
-    if (err) {
-        console.log("❌ SMTP VERIFY ERROR:", err);
-    } else {
-        console.log("✅ SMTP READY");
+    const userExist = await userModel.findOne({ email });
+    if (!userExist) {
+      return res.status(400).json({ message: "User with this email does not exist" });
     }
-});
 
-        await transporter.sendMail(mailOptions);
+    const secret = process.env.JWT_KEY + userExist.password;
+    const token = jwt.sign(
+      { id: userExist._id, email: userExist.email },
+      secret,
+      { expiresIn: "5m" }
+    );
 
-        console.log("Password reset email sent to:", email);
+    const link = `https://chatapplication-api.onrender.com/reset-password/${userExist._id}/${token}`;
 
-        return res.status(200).json({
-            message: "Email sent successfully",
-            link: link
-        });
+    /* ---------------- BREVO SETUP ---------------- */
+    const client = SibApiV3Sdk.ApiClient.instance;
+    const apiKey = client.authentications["api-key"];
+    apiKey.apiKey = process.env.BREVO_API_KEY;
 
-    } catch (error) {
-        console.error("Forgot Password Error:", error);
-        return res.status(500).json({ message: "Server error" });
-    }
+    const tranEmailApi = new SibApiV3Sdk.TransactionalEmailsApi();
+
+    const emailData = {
+      sender: {
+        email: process.env.SENDER_EMAIL,
+        name: process.env.SENDER_NAME
+      },
+      to: [{ email }],
+      subject: "Password Reset Request for Socketmate",
+      htmlContent: `
+        <p>Hello,</p>
+        <p>Click the link below to reset your password:</p>
+        <a href="${link}">${link}</a>
+        <p>This link expires in 5 minutes.</p>
+      `
+    };
+
+    await tranEmailApi.sendTransacEmail(emailData);
+
+    return res.status(200).json({
+      message: "Password reset email sent successfully"
+    });
+
+  } catch (error) {
+    console.error("Forgot Password Error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
 }
 
 async function resetPassword(req, res) {
