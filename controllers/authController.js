@@ -95,7 +95,7 @@ async function forgotPassword(req, res) {
     );
 
     const link = `https://chatapplication-api.onrender.com/reset-password/${userExist._id}/${token}`;
-
+    console.log("Link :", link);
     /* ---------------- BREVO SETUP ---------------- */
     const client = SibApiV3Sdk.ApiClient.instance;
     const apiKey = client.authentications["api-key"];
