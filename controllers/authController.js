@@ -6,8 +6,8 @@ import jwt from 'jsonwebtoken'
 import { CloudinaryStorage } from 'multer-storage-cloudinary'
 import cloudinary from "../cloudinary.js"
 import nodemailer from 'nodemailer'
+import SibApiV3Sdk from 'sib-api-v3-sdk';
 
-const SibApiV3Sdk = require('sib-api-v3-sdk');
 // const storage = multer.diskStorage({
 //     destination: (req, res, cb) => {
 //         cb(null, 'public/images')
