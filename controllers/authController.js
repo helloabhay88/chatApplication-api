@@ -117,6 +117,13 @@ async function forgotPassword(req, res) {
             subject: "Password Reset Request for Socketmate",
             text: `Click the link below to reset your password:\n\n${link}`
         };
+        transporter.verify((err, success) => {
+    if (err) {
+        console.log("❌ SMTP VERIFY ERROR:", err);
+    } else {
+        console.log("✅ SMTP READY");
+    }
+});
 
         await transporter.sendMail(mailOptions);
 
