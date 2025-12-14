@@ -91,7 +91,7 @@ async function forgotPassword(req, res) {
     const token = jwt.sign(
       { id: userExist._id, email: userExist.email },
       secret,
-      { expiresIn: "5m" }
+      { expiresIn: "10m" }
     );
 
     const link = `https://chatapplication-api.onrender.com/reset-password/${userExist._id}/${token}`;
@@ -111,15 +111,15 @@ async function forgotPassword(req, res) {
       to: [{ email }],
       subject: "Password Reset Request for Socketmate",
       htmlContent: `
-        <p>Hello,</p>
+        <p>Hi ${userExist.name},</p>
         <p>Click the link below to reset your password:</p>
         <a href="${link}">${link}</a>
-        <p>This link expires in 5 minutes.</p>
+        <p>This link expires in 10 minutes.</p>
       `
     };
 
     await tranEmailApi.sendTransacEmail(emailData);
-
+    console.log("Passwored reset email sent successfully to ", email);
     return res.status(200).json({
       message: "Password reset email sent successfully"
     });
