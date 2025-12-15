@@ -29,7 +29,8 @@ export const upload = multer({ storage: storage })
 
 async function Register(req, res) {
     try {
-        const { email, password, name } = req.body
+        let { email, password, name } = req.body
+        email=email.trim().toLowerCase();
         let file;
         if (req.file) {
             file = req.file.filename
@@ -59,7 +60,8 @@ async function Register(req, res) {
 
 async function Login(req, res) {
     try {
-        const { email, password } = req.body
+        let { email, password } = req.body
+        email=email.trim().toLowerCase();
         const userExist = await userModel.findOne({ email })
         if (!userExist) {
             return res.status(400).json({ message: "Email or Password is incorrect" })
