@@ -80,13 +80,46 @@ io.on('connection', (socket) => {
         await Message.findByIdAndUpdate(messageId, { seen: true })
         //console.log(senderId, " ", messageId)
         
-            if (onlineUsers[senderId]) {
-                //console.log("message seen who is the sender", senderId, onlineUsers[senderId])
-                io.to(onlineUsers[senderId]).emit('messageSeen', { messageId })
+        if (onlineUsers[senderId]) {
+            //console.log("message seen who is the sender", senderId, onlineUsers[senderId])
+            io.to(onlineUsers[senderId]).emit('messageSeen', { messageId })
+        }
+    });
 
-            }
-        
-    })
+    // WebRTC Signaling Events
+    socket.on('callUser', ({ userToCall, signalData, from, name }) => {
+        console.log(`--> [Socket] callUser received. From: ${from}, To: ${userToCall}`);
+        const receiverSocketId = onlineUsers[userToCall];
+        if (receiverSocketId) {
+            console.log(`--> [Socket] Forwarding callUser to socket ${receiverSocketId}`);
+            io.to(receiverSocketId).emit("callUser", { signal: signalData, from, name });
+        } else {
+            console.log(`--> [Socket] ERROR: Receiver ${userToCall} is not online.`);
+        }
+    });
+
+    socket.on('answerCall', (data) => {
+        console.log(`--> [Socket] answerCall received. To: ${data.to}`);
+        const callerSocketId = onlineUsers[data.to];
+        if (callerSocketId) {
+            io.to(callerSocketId).emit("callAccepted", data.signal);
+        }
+    });
+
+    socket.on('ice-candidate', ({ target, candidate }) => {
+        const receiverSocketId = onlineUsers[target];
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('ice-candidate', candidate);
+        }
+    });
+
+    socket.on('endCall', ({ to }) => {
+        console.log(`--> [Socket] endCall received. To: ${to}`);
+        const receiverSocketId = onlineUsers[to];
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit("callEnded");
+        }
+    });
 });
 
 
