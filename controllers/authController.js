@@ -209,8 +209,55 @@ async function changePassword(req, res) {
         return res.status(500).json({ message: "error" + error })
     }
 }
-const verify = (req, res) => {
-    return res.status(200).json({ message: 'success' })
+async function getCurrentUser(req, res) {
+    try {
+        const user = await userModel.findById(req.user._id).select('-password');
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        return res.status(200).json({ message: 'success', user });
+    } catch (error) {
+        console.error("Error in getCurrentUser:", error);
+        return res.status(500).json({ message: "Server error" });
+    }
 }
 
-export { Register, Login, verify, forgotPassword, resetPassword, changePassword }
+async function updateProfile(req, res) {
+    try {
+        const userId = req.user._id;
+        const { name } = req.body;
+        
+        const updateData = {};
+        if (name) {
+            updateData.name = name.trim();
+        }
+        if (req.file) {
+            updateData.image = req.file.filename;
+        }
+
+        if (Object.keys(updateData).length === 0) {
+            return res.status(400).json({ message: "Nothing to update" });
+        }
+
+        const updatedUser = await userModel.findByIdAndUpdate(
+            userId,
+            { $set: updateData },
+            { new: true }
+        ).select('-password');
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        return res.status(200).json({ message: 'success', user: updatedUser });
+    } catch (error) {
+        console.error("Error in updateProfile:", error);
+        return res.status(500).json({ message: "Server error" });
+    }
+}
+
+const verify = (req, res) => {
+    return res.status(200).json({ message: 'success', user: req.user })
+}
+
+export { Register, Login, verify, forgotPassword, resetPassword, changePassword, getCurrentUser, updateProfile }
