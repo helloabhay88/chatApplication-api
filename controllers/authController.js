@@ -225,7 +225,7 @@ async function getCurrentUser(req, res) {
 async function updateProfile(req, res) {
     try {
         const userId = req.user._id;
-        const { name } = req.body;
+        const { name, removeImage } = req.body;
         
         const updateData = {};
         if (name) {
@@ -233,6 +233,8 @@ async function updateProfile(req, res) {
         }
         if (req.file) {
             updateData.image = req.file.filename;
+        } else if (removeImage === 'true') {
+            updateData.image = '';
         }
 
         if (Object.keys(updateData).length === 0) {
