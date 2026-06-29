@@ -1,5 +1,7 @@
 # Socketmate Chat Backend Server
 
+*   **Live Application URL:** [https://socketmate.vercel.app/](https://socketmate.vercel.app/)
+
 This repository houses the backend REST API server and WebSocket signaling engine for the Socketmate real-time chat and WebRTC calling application. It is built using Node.js, Express, MongoDB, and Socket.io.
 
 ## Features
