@@ -2,6 +2,7 @@ import { Server } from 'socket.io'
 import http from 'http'
 import express from 'express'
 import Message from '../models/Message.js'
+import Conversation from '../models/Conversation.js'
 
 const app = express()
 const onlineUsers = {}
@@ -76,23 +77,67 @@ io.on('connection', (socket) => {
         io.emit('onlineUsers', Object.keys(onlineUsers));
     });
 
-    socket.on('messageSeen', async ({ messageId, senderId }) => {
-        await Message.findByIdAndUpdate(messageId, { seen: true })
-        //console.log(senderId, " ", messageId)
-        
-        if (onlineUsers[senderId]) {
-            //console.log("message seen who is the sender", senderId, onlineUsers[senderId])
-            io.to(onlineUsers[senderId]).emit('messageSeen', { messageId })
+    socket.on('markMessagesSeen', async ({ senderId, receiverId }) => {
+        try {
+            const conversation = await Conversation.findOne({
+                participants: { $all: [senderId, receiverId] }
+            });
+            if (conversation) {
+                await Message.updateMany(
+                    { conversationId: conversation._id, sender: receiverId, seen: false },
+                    { $set: { seen: true } }
+                );
+                // Optionally notify the sender that their messages were seen
+                if (onlineUsers[receiverId]) {
+                    io.to(onlineUsers[receiverId]).emit('messagesSeenBulk', { seenBy: senderId });
+                }
+            }
+        } catch (error) {
+            console.error("Error marking messages seen:", error);
+        }
+    });
+
+    socket.on('sendMessage', async ({ senderId, receiverId, content }, callback) => {
+        try {
+            let conversation = await Conversation.findOne({
+                participants: { $all: [senderId, receiverId] }
+            });
+            
+            if (!conversation) {
+                conversation = await Conversation({
+                    participants: [senderId, receiverId]
+                });
+                await conversation.save();
+            }
+            
+            const newMessage = new Message({
+                conversationId: conversation._id,
+                sender: senderId,
+                content: content,
+                createdAt: new Date()
+            });
+            
+            const receiverSocketId = onlineUsers[receiverId];
+            if (receiverSocketId) {
+                io.to(receiverSocketId).emit('newMessage', newMessage);
+            }
+            
+            await newMessage.save();
+            
+            if (callback) callback({ success: true, message: newMessage });
+        } catch (error) {
+            console.error("Error in sendMessage socket event:", error);
+            if (callback) callback({ success: false, error: error.message });
         }
     });
 
     // WebRTC Signaling Events
-    socket.on('callUser', ({ userToCall, signalData, from, name }) => {
-        console.log(`--> [Socket] callUser received. From: ${from}, To: ${userToCall}`);
+    socket.on('callUser', ({ userToCall, signalData, from, name, callType }) => {
+        console.log(`--> [Socket] callUser received. From: ${from}, To: ${userToCall}, Type: ${callType}`);
         const receiverSocketId = onlineUsers[userToCall];
         if (receiverSocketId) {
             console.log(`--> [Socket] Forwarding callUser to socket ${receiverSocketId}`);
-            io.to(receiverSocketId).emit("callUser", { signal: signalData, from, name });
+            io.to(receiverSocketId).emit("callUser", { signal: signalData, from, name, callType });
         } else {
             console.log(`--> [Socket] ERROR: Receiver ${userToCall} is not online.`);
         }
