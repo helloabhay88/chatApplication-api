@@ -227,13 +227,35 @@ async function updateProfile(req, res) {
         const userId = req.user._id;
         const { name, removeImage } = req.body;
         
+        const user = await userModel.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
         const updateData = {};
         if (name) {
             updateData.name = name.trim();
         }
+        
         if (req.file) {
+            // Delete previous image from Cloudinary to free space
+            if (user.image) {
+                try {
+                    await cloudinary.uploader.destroy(user.image);
+                } catch (err) {
+                    console.error("Error deleting old profile pic from Cloudinary:", err);
+                }
+            }
             updateData.image = req.file.filename;
         } else if (removeImage === 'true') {
+            // Delete current image from Cloudinary
+            if (user.image) {
+                try {
+                    await cloudinary.uploader.destroy(user.image);
+                } catch (err) {
+                    console.error("Error deleting profile pic from Cloudinary:", err);
+                }
+            }
             updateData.image = '';
         }
 
@@ -246,10 +268,6 @@ async function updateProfile(req, res) {
             { $set: updateData },
             { new: true }
         ).select('-password');
-
-        if (!updatedUser) {
-            return res.status(404).json({ message: "User not found" });
-        }
 
         return res.status(200).json({ message: 'success', user: updatedUser });
     } catch (error) {

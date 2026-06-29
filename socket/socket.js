@@ -97,7 +97,7 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('sendMessage', async ({ senderId, receiverId, content }, callback) => {
+    socket.on('sendMessage', async ({ senderId, receiverId, content, messageType, fileUrl, fileName }, callback) => {
         try {
             let conversation = await Conversation.findOne({
                 participants: { $all: [senderId, receiverId] }
@@ -114,6 +114,9 @@ io.on('connection', (socket) => {
                 conversationId: conversation._id,
                 sender: senderId,
                 content: content,
+                messageType: messageType || 'text',
+                fileUrl: fileUrl,
+                fileName: fileName,
                 createdAt: new Date()
             });
             
